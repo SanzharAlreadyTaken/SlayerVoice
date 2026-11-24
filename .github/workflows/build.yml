@@ -10,6 +10,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Unzip project
+        run: |
+          if [ -f SlayerVoice.zip ]; then unzip -o -q SlayerVoice.zip; fi
+          ls -R | head -50
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -20,9 +25,16 @@ jobs:
           gradle-version: "8.7"
 
       - name: Build
-        run: gradle assembleRelease --no-daemon --stacktrace
+        run: |
+          SETTINGS=$(find . -name settings.gradle.kts -not -path "./.git/*" | head -1)
+          if [ -z "$SETTINGS" ]; then
+            echo "Не найден settings.gradle.kts"
+            exit 1
+          fi
+          cd "$(dirname "$SETTINGS")"
+          gradle assembleRelease --no-daemon --stacktrace
 
       - uses: actions/upload-artifact@v4
         with:
           name: SlayerVoice-apk
-          path: app/build/outputs/apk/release/*.apk
+          path: "**/app/build/outputs/apk/release/*.apk"
